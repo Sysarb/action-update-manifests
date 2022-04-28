@@ -25,6 +25,10 @@ inputs:
     description: 'Slack channel'
     required: true
 
+  registry:
+    description: 'Docker registry'
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -63,7 +67,7 @@ runs:
       run:  |
         mkdir -p ${{ env.DEPLOY_DIR }}
         cp -a ./manifests/. ${{ env.DEPLOY_DIR }}/
-        test -e ${{ env.DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ env.REGISTRY }}/${{ inputs.name }}:latest|${{ env.REGISTRY }}/${{ inputs.name }}:${{ env.PACKAGE_TAG }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
+        test -e ${{ env.DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ env.PACKAGE_TAG }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
         test -e ${{ env.DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ env.INSTANCES }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
         test -e ${{ env.DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ env.PACKAGE_TAG }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
         test -e ${{ env.DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.PUB_DOMAIN }}|g" ${{ env.DEPLOY_DIR }}/ingress.yaml
