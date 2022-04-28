@@ -21,6 +21,10 @@ inputs:
     description: 'Release version'
     required: true
 
+  slack:
+    description: 'Slack channel'
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -71,7 +75,7 @@ runs:
         cp -a ./deployments/templates/application.yaml ${{ env.APP_DIR }}/
         sed -i "s|\[NAME\]|${{ inputs.name }}|g" ${{ env.APP_DIR }}/application.yaml
         sed -i "s|\[PATH\]|deployment/${{ env.BUILD_DIR }}/${{ inputs.name }}/|g" ${{ env.APP_DIR }}/application.yaml
-        sed -i "s|\[SLACK_CHANNEL\]|${{ secrets.SLACK_BOT_CHANNEL }}|g" ${{ env.APP_DIR }}/application.yaml
+        sed -i "s|\[SLACK_CHANNEL\]|${{ inputs.slack }}|g" ${{ env.APP_DIR }}/application.yaml
 
     - name: Push deployment
       shell: bash
