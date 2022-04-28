@@ -52,6 +52,12 @@ runs:
         echo "TARGET_DEPLOY_DIR=./deployments/deployment/${{ inputs.target }}/${{ inputs.name }}" >> $GITHUB_ENV
         echo "TARGET_APP_DIR=./deployments/application/${{ inputs.target }}/${{ inputs.name }}" >> $GITHUB_ENV
 
+    - name: Configure git
+      shell: bash
+      run: |
+        git config --global user.email "devops@sysarb.se"
+        git config --global user.name "Sysarb"
+
     - name: Checkout deployment
       uses: actions/checkout@v2
       with:
