@@ -1,0 +1,82 @@
+name: 'Update manifests'
+description: 'Update micro service manifests'
+inputs:
+  name:
+    description: 'Name of the micro service'
+    required: true
+
+  token:
+    description: 'GitHub token'
+    required: true
+
+  target:
+    description: 'prod | dev'
+    required: true
+
+  instances:
+    description: 'Number of instances to run the micro service on'
+    required: true
+
+  version:
+    description: 'Release version'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set PROD env
+      shell: bash
+      if: "${{ inputs.token }} == 'prod'"
+      run: |
+        echo "BUILD_DIR=prod" >> $GITHUB_ENV
+        echo "PUB_DOMAIN=app" >> $GITHUB_ENV
+        echo "PACKAGE_TAG=${{ inputs.version }}" >> $GITHUB_ENV
+
+    - name: Set DEV env
+      shell: bash
+      if: "${{ inputs.token }} != 'prod'"
+      run: |
+        echo "BUILD_DIR=dev" >> $GITHUB_ENV
+        echo "PUB_DOMAIN=app" >> $GITHUB_ENV
+        echo "PACKAGE_TAG=${{ inputs.version }}-rc${{github.run_number}}" >> $GITHUB_ENV
+
+    - name: Set env
+      shell: bash
+      run: |
+        echo "DEPLOY_DIR=./deployments/deployment/${{ env.BUILD_DIR }}/${{ inputs.name }}" >> $GITHUB_ENV
+        echo "APP_DIR=./deployments/application/${{ env.BUILD_DIR }}/${{ inputs.name }}" >> $GITHUB_ENV
+        echo "INSTANCES=${{ inputs.instances }}" >> $GITHUB_ENV
+
+    - name: Checkout deployment
+      uses: actions/checkout@v2
+      with:
+        repository: Sysarb/k8s-deployments
+        token: ${{ inputs.token }}
+        path: ./deployments
+
+    - name: Update deployment manifests
+      shell: bash
+      run:  |
+        mkdir -p ${{ env.DEPLOY_DIR }}
+        cp -a ./manifests/. ${{ env.DEPLOY_DIR }}/
+        sed -i "s|${{ env.REGISTRY }}/${{ inputs.name }}:latest|${{ env.REGISTRY }}/${{ inputs.name }}:${{ env.PACKAGE_TAG }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
+        sed -i "s|\[INSTANCES\]|${{ env.INSTANCES }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
+        sed -i "s|\[VERSION\]|${{ env.PACKAGE_TAG }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
+        sed -i "s|\[TOP_DOMAIN\]|${{ env.PUB_DOMAIN }}|g" ${{ env.DEPLOY_DIR }}/ingress.yaml
+
+    - name: Update application manifest
+      shell: bash
+      run: |
+        mkdir -p ${{ env.APP_DIR }}
+        cp -a ./deployments/templates/application.yaml ${{ env.APP_DIR }}/
+        sed -i "s|\[NAME\]|${{ inputs.name }}|g" ${{ env.APP_DIR }}/application.yaml
+        sed -i "s|\[PATH\]|deployment/${{ env.BUILD_DIR }}/${{ inputs.name }}/|g" ${{ env.APP_DIR }}/application.yaml
+        sed -i "s|\[SLACK_CHANNEL\]|${{ secrets.SLACK_BOT_CHANNEL }}|g" ${{ env.APP_DIR }}/application.yaml
+
+    - name: Push deployment
+      shell: bash
+      run: |
+        cd ./deployments
+        git add .
+        git commit -am "Updated deployments for ${{ env.IMAGE_NAME }}"
+        git push
