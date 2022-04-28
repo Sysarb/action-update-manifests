@@ -10,7 +10,7 @@ inputs:
     required: true
 
   target:
-    description: 'prod | dev'
+    description: 'Deployment target, [prod | dev]'
     required: true
 
   instances:
@@ -36,24 +36,21 @@ runs:
       shell: bash
       if: "${{ inputs.token }} == 'prod'"
       run: |
-        echo "BUILD_DIR=prod" >> $GITHUB_ENV
-        echo "PUB_DOMAIN=app" >> $GITHUB_ENV
-        echo "PACKAGE_TAG=${{ inputs.version }}" >> $GITHUB_ENV
+        echo "TOP_DOMAIN=app" >> $GITHUB_ENV
+        echo "VERSION_TAG=${{ inputs.version }}" >> $GITHUB_ENV
 
     - name: Set DEV env
       shell: bash
       if: "${{ inputs.token }} != 'prod'"
       run: |
-        echo "BUILD_DIR=dev" >> $GITHUB_ENV
-        echo "PUB_DOMAIN=app" >> $GITHUB_ENV
-        echo "PACKAGE_TAG=${{ inputs.version }}-rc${{github.run_number}}" >> $GITHUB_ENV
+        echo "TOP_DOMAIN=app" >> $GITHUB_ENV
+        echo "VERSION_TAG=${{ inputs.version }}-rc${{github.run_number}}" >> $GITHUB_ENV
 
     - name: Set env
       shell: bash
       run: |
-        echo "DEPLOY_DIR=./deployments/deployment/${{ env.BUILD_DIR }}/${{ inputs.name }}" >> $GITHUB_ENV
-        echo "APP_DIR=./deployments/application/${{ env.BUILD_DIR }}/${{ inputs.name }}" >> $GITHUB_ENV
-        echo "INSTANCES=${{ inputs.instances }}" >> $GITHUB_ENV
+        echo "TARGET_DEPLOY_DIR=./deployments/deployment/${{ inputs.target }}/${{ inputs.name }}" >> $GITHUB_ENV
+        echo "TARGET_APP_DIR=./deployments/application/${{ inputs.target }}/${{ inputs.name }}" >> $GITHUB_ENV
 
     - name: Checkout deployment
       uses: actions/checkout@v2
@@ -65,26 +62,26 @@ runs:
     - name: Update deployment manifests
       shell: bash
       run:  |
-        mkdir -p ${{ env.DEPLOY_DIR }}
-        cp -a ./manifests/. ${{ env.DEPLOY_DIR }}/
-        test -e ${{ env.DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ env.PACKAGE_TAG }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
-        test -e ${{ env.DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ env.INSTANCES }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
-        test -e ${{ env.DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ env.PACKAGE_TAG }}|g" ${{ env.DEPLOY_DIR }}/deploy.yaml
-        test -e ${{ env.DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.PUB_DOMAIN }}|g" ${{ env.DEPLOY_DIR }}/ingress.yaml
+        mkdir -p ${{ env.TARGET_DEPLOY_DIR }}
+        cp -a ./manifests/. ${{ env.TARGET_DEPLOY_DIR }}/
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ inputs.instances }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.TOP_DOMAIN }}|g" ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml
 
     - name: Update application manifest
       shell: bash
       run: |
-        mkdir -p ${{ env.APP_DIR }}
-        cp -a ./deployments/templates/application.yaml ${{ env.APP_DIR }}/
-        test -e ${{ env.APP_DIR }}/application.yaml && sed -i "s|\[NAME\]|${{ inputs.name }}|g" ${{ env.APP_DIR }}/application.yaml
-        test -e ${{ env.APP_DIR }}/application.yaml && sed -i "s|\[PATH\]|deployment/${{ env.BUILD_DIR }}/${{ inputs.name }}/|g" ${{ env.APP_DIR }}/application.yaml
-        test -e ${{ env.APP_DIR }}/application.yaml && sed -i "s|\[SLACK_CHANNEL\]|${{ inputs.slack }}|g" ${{ env.APP_DIR }}/application.yaml
+        mkdir -p ${{ env.TARGET_APP_DIR }}
+        cp -a ./deployments/templates/application.yaml ${{ env.TARGET_APP_DIR }}/
+        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[NAME\]|${{ inputs.name }}|g" ${{ env.TARGET_APP_DIR }}/application.yaml
+        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[PATH\]|deployment/${{ inputs.target }}/${{ inputs.name }}/|g" ${{ env.TARGET_APP_DIR }}/application.yaml
+        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[SLACK_CHANNEL\]|${{ inputs.slack }}|g" ${{ env.TARGET_APP_DIR }}/application.yaml
 
     - name: Push deployment
       shell: bash
       run: |
         cd ./deployments
         git add .
-        git commit -am "Updated deployments for ${{ inputs.name }} ${{ env.PACKAGE_TAG }}"
+        git commit -am "Updated deployments for ${{ inputs.name }}"
         git push
