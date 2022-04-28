@@ -70,19 +70,19 @@ runs:
       run:  |
         mkdir -p ${{ env.TARGET_DEPLOY_DIR }}
         cp -a ./manifests/. ${{ env.TARGET_DEPLOY_DIR }}/
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ inputs.instances }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.TOP_DOMAIN }}|g" ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ inputs.instances }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.TOP_DOMAIN }}|g" ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml || true
 
     - name: Update application manifest
       shell: bash
       run: |
         mkdir -p ${{ env.TARGET_APP_DIR }}
         cp -a ./deployments/templates/application.yaml ${{ env.TARGET_APP_DIR }}/
-        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[NAME\]|${{ inputs.name }}|g" ${{ env.TARGET_APP_DIR }}/application.yaml
-        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[PATH\]|deployment/${{ inputs.target }}/${{ inputs.name }}/|g" ${{ env.TARGET_APP_DIR }}/application.yaml
-        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[SLACK_CHANNEL\]|${{ inputs.slack }}|g" ${{ env.TARGET_APP_DIR }}/application.yaml
+        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[NAME\]|${{ inputs.name }}|g" ${{ env.TARGET_APP_DIR }}/application.yaml || true
+        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[PATH\]|deployment/${{ inputs.target }}/${{ inputs.name }}/|g" ${{ env.TARGET_APP_DIR }}/application.yaml || true
+        test -e ${{ env.TARGET_APP_DIR }}/application.yaml && sed -i "s|\[SLACK_CHANNEL\]|${{ inputs.slack }}|g" ${{ env.TARGET_APP_DIR }}/application.yaml || true
 
     - name: Push deployment
       shell: bash
