@@ -37,14 +37,12 @@ runs:
       if: "${{ inputs.token }} == 'prod'"
       run: |
         echo "TOP_DOMAIN=app" >> $GITHUB_ENV
-        echo "VERSION_TAG=${{ inputs.version }}" >> $GITHUB_ENV
 
     - name: Set DEV env
       shell: bash
       if: "${{ inputs.token }} != 'prod'"
       run: |
         echo "TOP_DOMAIN=app" >> $GITHUB_ENV
-        echo "VERSION_TAG=${{ inputs.version }}-rc${{github.run_number}}" >> $GITHUB_ENV
 
     - name: Set env
       shell: bash
@@ -70,9 +68,9 @@ runs:
       run:  |
         mkdir -p ${{ env.TARGET_DEPLOY_DIR }}
         cp -a ./manifests/. ${{ env.TARGET_DEPLOY_DIR }}/
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ inputs.instances }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ env.VERSION_TAG }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.TOP_DOMAIN }}|g" ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml || true
 
     - name: Update application manifest
