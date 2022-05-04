@@ -71,6 +71,7 @@ runs:
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ inputs.instances }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[SERVICE_NAME\]|${{ github.event.repository.name }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.TOP_DOMAIN }}|g" ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml || true
 
     - name: Update application manifest
