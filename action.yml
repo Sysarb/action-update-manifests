@@ -25,24 +25,25 @@ inputs:
     description: 'Slack channel'
     required: true
 
-  registry:
-    description: 'Docker registry'
-    required: true
-
 runs:
   using: "composite"
   steps:
+    - name: Set SHARED env
+      shell: bash
+      run: |
+        echo "REGISTRY=ghcr.io" >> $GITHUB_ENV
+
     - name: Set PROD env
       shell: bash
-      if: "${{ inputs.token }} == 'prod'"
+      if: "${{ inputs.target }} == 'prod'"
       run: |
         echo "TOP_DOMAIN=app" >> $GITHUB_ENV
 
     - name: Set DEV env
       shell: bash
-      if: "${{ inputs.token }} != 'prod'"
+      if: "${{ inputs.target }} != 'prod'"
       run: |
-        echo "TOP_DOMAIN=app" >> $GITHUB_ENV
+        echo "TOP_DOMAIN=dev" >> $GITHUB_ENV
 
     - name: Set env
       shell: bash
@@ -68,7 +69,7 @@ runs:
       run:  |
         mkdir -p ${{ env.TARGET_DEPLOY_DIR }}
         cp -a ./manifests/. ${{ env.TARGET_DEPLOY_DIR }}/
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ inputs.registry }}/${{ inputs.name }}:latest|${{ inputs.registry }}/${{ inputs.name }}:${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ env.REGISTRY }}/${{ inputs.name }}:latest|${{ env.REGISTRY }}/${{ inputs.name }}:${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ inputs.instances }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[SERVICE_NAME\]|${{ github.event.repository.name }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
