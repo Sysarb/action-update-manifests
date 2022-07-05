@@ -25,6 +25,10 @@ inputs:
     description: 'Slack channel'
     required: true
 
+  repository:
+    description: 'Repository path'
+    required: true
+
 runs:
   using: "composite"
   steps:
@@ -48,8 +52,8 @@ runs:
     - name: Set env
       shell: bash
       run: |
-        echo "TARGET_DEPLOY_DIR=./deployments/deployment/${{ inputs.target }}/${{ inputs.name }}" >> $GITHUB_ENV
-        echo "TARGET_APP_DIR=./deployments/application/${{ inputs.target }}/${{ inputs.name }}" >> $GITHUB_ENV
+        echo "TARGET_DEPLOY_DIR=./deployments/deployment/${{ inputs.target }}/${{ inputs.repository }}" >> $GITHUB_ENV
+        echo "TARGET_APP_DIR=./deployments/application/${{ inputs.target }}/${{ inputs.repository }}" >> $GITHUB_ENV
 
     - name: Configure git
       shell: bash
@@ -72,7 +76,7 @@ runs:
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|${{ env.REGISTRY }}/${{ inputs.name }}:latest|${{ env.REGISTRY }}/${{ inputs.name }}:${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[INSTANCES\]|${{ inputs.instances }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[VERSION\]|${{ inputs.version }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
-        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[SERVICE_NAME\]|${{ github.event.repository.name }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
+        test -e ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml && sed -i "s|\[SERVICE_NAME\]|${{ inputs.name }}|g" ${{ env.TARGET_DEPLOY_DIR }}/deploy.yaml || true
         test -e ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml && sed -i "s|\[TOP_DOMAIN\]|${{ env.TOP_DOMAIN }}|g" ${{ env.TARGET_DEPLOY_DIR }}/ingress.yaml || true
 
     - name: Update application manifest
